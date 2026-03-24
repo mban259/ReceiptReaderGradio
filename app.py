@@ -44,10 +44,10 @@ def retry(index, files):
 def update(index, json_editor, state):
     try:
         state[index] = json.loads(json_editor)
-        gr.Info("更新しました")
+        gr.Info("Updated successfully")
         return state
     except json.JSONDecodeError:
-        raise gr.Error("JSONの形式が正しくありません")
+        raise gr.Error("Invalid JSON format")
 
 
 def download(state):
