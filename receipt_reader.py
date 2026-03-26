@@ -27,12 +27,12 @@ def parse_receipt(img, debug=False, temperature=0.0):
     if debug:
         return {
             "store_name": "サンプルストア",
-            "date": "2024-01-01",
+            "date": "2024-03-26T15:00:00",
             "items": [
                 {"name": "商品A", "price": 100},
                 {"name": "商品B", "price": 200}
             ],
-            "total": 300,
+            "total_amount": 300,
             "file_name": os.path.basename(img)
         }
     response = client.chat(

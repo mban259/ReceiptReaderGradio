@@ -4,12 +4,23 @@ import receipt_reader
 import os
 import tempfile
 from datetime import datetime
-
+import pandas as pd
 
 def select_item(index, files, state):
     if index is None:
         return None, ""
-    return files[index].name, json.dumps(state[index], indent=2, ensure_ascii=False)
+    # image,
+    # store name
+    # date
+    # items_df,
+    # total
+    st = state[index]
+    store_name = st["store_name"]
+    date = datetime.fromisoformat(st["date"])
+    items_df = [{"name": item["name"], "price": item["price"]}
+                for item in st["items"]]
+    total = st["total_amount"]
+    return files[index].name, store_name, date, pd.DataFrame(items_df), total
 
 
 def process_images(files, progress=gr.Progress()):
@@ -23,7 +34,7 @@ def process_images(files, progress=gr.Progress()):
 
     for file in files:
         results.append(receipt_reader.parse_receipt(
-            file.name, temperature=0.0))
+            file.name, temperature=0.0, debug=True))
         completed += 1
         name = os.path.basename(file.name)
         file_names.append(name)
@@ -38,16 +49,23 @@ def retry(index, files):
         files[index].name, temperature=0.7)
     print(index)
     # state[index] = result
-    return json.dumps(result, indent=2, ensure_ascii=False)
+    store_name = result["store_name"]
+    date = datetime.fromisoformat(result["date"])
+    items_df = [{"name": item["name"], "price": item["price"]}
+                for item in result["items"]]
+    total = result["total_amount"]
+    return store_name, date, pd.DataFrame(items_df), total
 
 
-def update(index, json_editor, state):
-    try:
-        state[index] = json.loads(json_editor)
-        gr.Info("Updated successfully")
-        return state
-    except json.JSONDecodeError:
-        raise gr.Error("Invalid JSON format")
+def update(index, state, store_name, date, items_df, total):
+    js = {
+        "store_name": store_name,
+        "date": date.isoformat(),
+        "items": items_df.to_dict(orient="records"),
+        "total_amount": total
+    }
+    state[index] = js
+    return state
 
 
 def download(state):
@@ -76,6 +94,7 @@ with gr.Blocks() as app:
     submit_button = gr.Button("Analyze")
 
     state = gr.State([])
+    tmp_json = gr.State()
 
     selector = gr.Dropdown(
         label="Results",
@@ -85,8 +104,10 @@ with gr.Blocks() as app:
     with gr.Row():
         preview_image = gr.Image(label="Preview")
         with gr.Column():
-            json_editor = gr.Code(
-                label="Result", language="json", interactive=True)
+            store_name = gr.Textbox(lines=1, interactive=True, label="Store Name")
+            date = gr.DateTime(interactive=True, label="Date", type="datetime")
+            items_df = gr.Dataframe(interactive=True, label="items")
+            total = gr.Number(interactive=True, label="Total Amount")
             retry_button = gr.Button("Retry")
             update_button = gr.Button("Update")
 
@@ -103,18 +124,18 @@ with gr.Blocks() as app:
     selector.change(
         fn=select_item,
         inputs=[selector, input_files, state],
-        outputs=[preview_image, json_editor]
+        outputs=[preview_image, store_name, date, items_df, total]
     )
 
     retry_button.click(
         fn=retry,
         inputs=[selector, input_files],
-        outputs=json_editor
+        outputs=[store_name, date, items_df, total]
     )
 
     update_button.click(
         fn=update,
-        inputs=[selector, json_editor, state],
+        inputs=[selector, state, store_name, date, items_df, total],
         outputs=state
     )
 
