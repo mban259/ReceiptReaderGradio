@@ -34,7 +34,7 @@ def process_images(files, progress=gr.Progress()):
 
     for file in files:
         results.append(receipt_reader.parse_receipt(
-            file.name, temperature=0.0, debug=True))
+            file.name, temperature=0.0))
         completed += 1
         name = os.path.basename(file.name)
         file_names.append(name)
@@ -65,6 +65,7 @@ def update(index, state, store_name, date, items_df, total):
         "total_amount": total
     }
     state[index] = js
+    gr.Info("Updated successfully")
     return state
 
 
