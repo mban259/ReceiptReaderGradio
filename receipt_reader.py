@@ -40,7 +40,7 @@ def parse_receipt(img, debug=False, temperature=0.0):
         messages=[
             {
                 "role": "system",
-                "content": "あなたはレシートリーダーです。レシートの画像を解析して、店名、ISO8601形式（YYYY-MM-DDTHH:MM:SS）の日付、購入した商品と価格、合計金額を抽出してください。"
+                "content": "あなたはレシートリーダーです。レシートの画像を解析して、店名、ISO8601形式（YYYY-MM-DDTHH:MM:SS）の日付、購入した商品と価格、合計金額をjsonで抽出してください。"
             },
             {
                 "role": "user",
